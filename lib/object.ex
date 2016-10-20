@@ -17,8 +17,7 @@ defmodule ExRiakCS.Object do
   More info at: http://docs.basho.com/riak/cs/2.1.1/references/apis/storage/s3/delete-object/
   """
   def delete(bucket, key) do
-    path = "/#{bucket}/#{key}"
-    case Request.request(:delete, path) do
+    case Request.request(:delete, bucket |> path(key)) do
       %{status_code: 204} -> {:ok, nil}
       %{status_code: code, body: body} -> {:error, {code, body}}
     end
@@ -35,10 +34,25 @@ defmodule ExRiakCS.Object do
   """
 
   def head(bucket, key) do
-    path = "/#{bucket}/#{key}"
-    case Request.request(:head, path) do
+    case Request.request(:head, bucket |> path(key)) do
       %{status_code: 200, headers: headers} -> {:ok, headers}
       %{status_code: code, body: body} -> {:error, {code, body}}
     end
   end
+
+
+  def get(bucket, key) do
+    case Request.request(:get, bucket |> path(key)) do
+      %{status_code: 200, body: body} -> {:ok, body}
+      %{status_code: code, body: body} -> {:error, {code, body}}
+    end
+  end
+
+  def stream_get(bucket, key) do
+    bucket
+    |> path(key)
+    |> ExRiakCS.Object.DownloadStream.new
+  end
+
+  def path(bucket, key), do: "/#{bucket}/#{key}"
 end

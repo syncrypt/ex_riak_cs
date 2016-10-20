@@ -8,8 +8,12 @@ defmodule ExRiakCS.Request do
     {:ok, %HTTPoison.Response{
       status_code: code,
       body: body,
-      headers: headers}} =
-    HTTPoison.request(type, url, body, headers)
+      headers: headers}} = HTTPoison.request(type, url, body, headers)
     %{status_code: code, body: body, headers: headers}
+  end
+
+  def async_get(target, path, params \\ %{}, headers \\ %{}) do
+    url = request_url(:get, path, headers, params)
+    HTTPoison.get!(url, headers, stream_to: target)
   end
 end
