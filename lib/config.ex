@@ -27,7 +27,11 @@ defmodule ExRiakCS.Config do
   end
 
   def base_url do
-    env_var!(:schema) <> env_var!(:host)
+    url = env_var!(:schema) <> env_var!(:host)
+    case env_var(:port) do
+      nil  -> url
+      port -> url <> ":#{port}"
+    end
   end
 
   def acl do
