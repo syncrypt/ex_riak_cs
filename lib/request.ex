@@ -5,15 +5,16 @@ defmodule ExRiakCS.Request do
 
   def request(type, path, params \\ %{}, headers \\ %{}, body \\ []) do
     url = request_url(type, path, headers, params)
-    {:ok, %HTTPoison.Response{
-      status_code: code,
-      body: body,
-      headers: headers}} = HTTPoison.request(type, url, body, headers)
-    %{status_code: code, body: body, headers: headers}
+    HTTPoison.request!(type, url, body, headers)
   end
 
-  def async_get(target, path, params \\ %{}, headers \\ %{}) do
+  def get_async(target, path, params \\ %{}, headers \\ %{}) do
     url = request_url(:get, path, headers, params)
     HTTPoison.get!(url, headers, stream_to: target)
+  end
+
+  def get_async_throttled(target, path, params \\ %{}, headers \\ %{}) do
+    url = request_url(:get, path, headers, params)
+    HTTPoison.get!(url, headers, stream_to: target, async: :once)
   end
 end

@@ -48,7 +48,7 @@ defmodule ExRiakCS.Object do
     end
   end
 
-  def stream_get(bucket, key) do
+  def get_stream(bucket, key) do
     bucket
     |> path(key)
     |> ExRiakCS.Object.DownloadStream.new
