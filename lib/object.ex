@@ -49,9 +49,12 @@ defmodule ExRiakCS.Object do
   end
 
   def get_stream(bucket, key) do
+    alias ExRiakCS.Object.DownloadStream
+
     bucket
     |> path(key)
-    |> ExRiakCS.Object.DownloadStream.new
+    |> DownloadStream.new
+    |> DownloadStream.start
   end
 
   def path(bucket, key), do: "/#{bucket}/#{key}"

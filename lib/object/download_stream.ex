@@ -15,13 +15,19 @@ defmodule ExRiakCS.Object.DownloadStream do
     )
   end
 
-  # start stream lazily when we call `next` the first time.
-  def next(%DownloadStream{id: nil, path: path} = stream) do
+  def start(%DownloadStream{id: nil, path: path} = stream) do
+    Logger.debug "ExRiakCS.Object.DownloadStream #{inspect stream} | Starting"
     Logger.debug "ExRiakCS.Object.DownloadStream #{inspect stream} | Starting"
 
     %{stream | id: Request.get_async_throttled(self, path)}
     |> read_status
     |> read_headers
+  end
+
+  # start stream lazily when we call `next` the first time.
+  def next(%DownloadStream{id: nil} = stream) do
+    stream
+    |> start
     |> next
   end
 
@@ -49,18 +55,23 @@ defmodule ExRiakCS.Object.DownloadStream do
   defp read_status(stream) do
     receive do
       %HTTPoison.AsyncStatus{code: 200} ->
-        stream
+        {:ok, stream}
+
+      %HTTPoison.AsyncStatus{code: code} when code in 400..499 ->
+        {:error, %HTTPoison.Error{reason: "File not found: #{stream.path}", id: stream.id}}
 
       after @timeout ->
         raise "ExRiakCS.Object.DownloadStream #{inspect stream} | Timed out"
     end
   end
 
-  defp read_headers(stream) do
+  defp read_headers({:error, _} = err), do: err
+
+  defp read_headers({:ok, stream}) do
     stream_next(stream)
     receive do
       %HTTPoison.AsyncHeaders{} ->
-        stream
+        {:ok, stream}
 
       after @timeout ->
         raise "ExRiakCS.Object.DownloadStream #{inspect stream} timed out"
