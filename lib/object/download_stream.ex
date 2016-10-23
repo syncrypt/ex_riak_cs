@@ -7,6 +7,9 @@ defmodule ExRiakCS.Object.DownloadStream do
 
   defstruct [:id, :path]
 
+  @doc """
+  Creates a DownloadStream without starting it.
+  """
   def new(path) do
     Elixir.Stream.resource(
       fn -> %DownloadStream{path: path} end,
@@ -15,6 +18,11 @@ defmodule ExRiakCS.Object.DownloadStream do
     )
   end
 
+  @doc """
+  Starts a given DownloadStream & checks if the HTTP resource it tries to download
+  exists.
+  Returns {:ok, %DownloadStream{}} on success, {:error, %HTTPoison.Error{}} otherwise.
+  """
   def start(%DownloadStream{id: nil, path: path} = stream) do
     Logger.debug "ExRiakCS.Object.DownloadStream #{inspect stream} | Starting"
     Logger.debug "ExRiakCS.Object.DownloadStream #{inspect stream} | Starting"
@@ -24,11 +32,27 @@ defmodule ExRiakCS.Object.DownloadStream do
     |> read_headers
   end
 
-  # start stream lazily when we call `next` the first time.
+  @doc """
+  Creates and starts a new DownloadStream for a given path.
+  """
+  def start(path) when is_binary(path) do
+    with {:ok, stream} <- %DownloadStream{path: path} |> start do
+      stream = Elixir.Stream.resource(
+        fn -> stream end,
+        &next/1,
+        &cleanup/1
+      )
+      {:ok, stream}
+    end
+  end
+
+  # start stream lazily when we call `next` the first time and the stream
+  # hasn't yet been started.
   def next(%DownloadStream{id: nil} = stream) do
-    stream
-    |> start
-    |> next
+    with {:ok, stream} <- stream |> start do
+      stream
+      |> next
+    end
   end
 
   def next(stream) do

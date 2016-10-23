@@ -53,7 +53,6 @@ defmodule ExRiakCS.Object do
 
     bucket
     |> path(key)
-    |> DownloadStream.new
     |> DownloadStream.start
   end
 
