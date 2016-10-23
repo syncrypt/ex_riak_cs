@@ -3,7 +3,7 @@ defmodule ExRiakCS.Object.DownloadStream do
   alias ExRiakCS.Request
   alias __MODULE__
 
-  @timeout ExRiakCS.Config.stream_get_timeout
+  @timeout ExRiakCS.Config.get_stream_timeout
 
   defstruct [:id, :path]
 

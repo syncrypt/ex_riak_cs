@@ -42,8 +42,8 @@ defmodule ExRiakCS.Config do
     env_var(:exp_days, 1)
   end
 
-  def stream_get_timeout do
-    env_var(:stream_get_timeout, 10_000)
+  def get_stream_timeout do
+    env_var(:get_stream_timeout, 10_000)
   end
 
   defp env_var!(key) do
