@@ -5,7 +5,7 @@ defmodule ExRiakCS.Object.DownloadStream do
 
   @timeout ExRiakCS.Config.get_stream_timeout
 
-  defstruct [:id, :path]
+  defstruct [:id, :path, :headers]
 
   @doc """
   Creates a DownloadStream without starting it.
@@ -94,13 +94,18 @@ defmodule ExRiakCS.Object.DownloadStream do
   defp read_headers({:ok, stream}) do
     stream_next(stream)
     receive do
-      %HTTPoison.AsyncHeaders{} ->
-        {:ok, stream}
+      %HTTPoison.AsyncHeaders{} = headers ->
+        %{stream | headers: headers}
+        |> stream_next # stream first chunk if we got headers correctly
 
       after @timeout ->
         raise "ExRiakCS.Object.DownloadStream #{inspect stream} timed out"
     end
   end
 
-  def stream_next(%DownloadStream{id: id}), do: HTTPoison.stream_next(id)
+  def stream_next(%DownloadStream{id: id} = stream) do
+    with {:ok, _} <- HTTPoison.stream_next(id) do
+      {:ok, stream}
+    end
+  end
 end
