@@ -17,4 +17,9 @@ defmodule ExRiakCS.Request do
     url = request_url(:get, path, headers, params)
     HTTPoison.get!(url, headers, stream_to: target, async: :once)
   end
+
+  def put(path, body, params \\ %{}, headers \\ %{}) do
+    url = request_url(:put, path, headers, params)
+    HTTPoison.put(url, body, headers)
+  end
 end

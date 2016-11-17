@@ -1,5 +1,6 @@
 defmodule ExRiakCS.Object do
   alias ExRiakCS.Request
+  import ExRiakCS.Config
 
   @moduledoc """
   This module contains object-level operations
@@ -54,6 +55,54 @@ defmodule ExRiakCS.Object do
     bucket
     |> path(key)
     |> DownloadStream.start
+  end
+
+  @min_part_size 5 * 1024 * 1024 # 5MB
+
+  def put_stream(bucket, key,
+                 file_size, stream_chunk_size, data_stream,
+                 mime_type \\ "application/octet-stream") do
+
+    if file_size < @min_part_size do
+      single_put_stream(bucket, key, file_size, stream_chunk_size, data_stream, mime_type)
+    else
+      multipart_put_stream(bucket, key, file_size, stream_chunk_size, data_stream, mime_type)
+    end
+  end
+
+  def single_put_stream(bucket, key, file_size, stream_chunk_size, data_stream, mime_type) do
+    data =
+      data_stream
+      |> Enum.reduce(<<>>, &(&2 <> &1))
+
+    headers = %{"Content-Type" => mime_type,
+                "x-amz-acl" => acl}
+
+    bucket
+    |> path(key)
+    |> Request.put(data, %{}, headers)
+  end
+
+  def multipart_put_stream(bucket, key, file_size, stream_chunk_size, data_stream, mime_type) do
+    alias ExRiakCS.MultipartUpload
+
+    {:ok, upload_id} = MultipartUpload.initiate_multipart_upload(bucket, key, mime_type)
+
+    chunk_by = (@min_part_size / stream_chunk_size) |> Float.ceil |> round
+
+    parts =
+      data_stream
+      |> Stream.chunk(chunk_by, chunk_by, [])
+      |> Stream.with_index
+      |> Enum.reduce([], fn(data, parts) ->
+        {data, number} = data
+        data = data |> Enum.reduce(<<>>, &(&2 <> &1))
+        {:ok, part_etag} = MultipartUpload.upload_part(bucket, key, upload_id, number + 1, data)
+        [{number + 1, part_etag} | parts]
+      end)
+      |> Enum.reverse
+
+    MultipartUpload.complete_multipart_upload(bucket, key, upload_id, parts)
   end
 
   def path(bucket, key), do: "/#{bucket}/#{key}"
