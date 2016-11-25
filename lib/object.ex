@@ -71,12 +71,10 @@ defmodule ExRiakCS.Object do
   end
 
   def single_put_stream(bucket, key, file_size, stream_chunk_size, data_stream, mime_type) do
-    data =
-      data_stream
-      |> Enum.reduce(<<>>, &(&2 <> &1))
-
     headers = %{"Content-Type" => mime_type,
                 "x-amz-acl" => acl}
+
+    data = data_stream |> Enum.into([])
 
     bucket
     |> path(key)
@@ -94,9 +92,7 @@ defmodule ExRiakCS.Object do
       data_stream
       |> Stream.chunk(chunk_by, chunk_by, [])
       |> Stream.with_index
-      |> Enum.reduce([], fn(data, parts) ->
-        {data, number} = data
-        data = data |> Enum.reduce(<<>>, &(&2 <> &1))
+      |> Enum.reduce([], fn({data, number}, parts) ->
         {:ok, part_etag} = MultipartUpload.upload_part(bucket, key, upload_id, number + 1, data)
         [{number + 1, part_etag} | parts]
       end)
