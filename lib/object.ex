@@ -76,9 +76,15 @@ defmodule ExRiakCS.Object do
 
     data = data_stream |> Enum.into([])
 
-    bucket
-    |> path(key)
-    |> Request.put(data, %{}, headers)
+    resp =
+      bucket
+      |> path(key)
+      |> Request.put(data, %{}, headers)
+
+    case resp do
+      %{status_code: 200, headers: headers, body: body} -> {:ok, body}
+      %{status_code: code, body: body} -> {:error, {code, body}}
+    end
   end
 
   def multipart_put_stream(bucket, key, file_size, stream_chunk_size, data_stream, mime_type) do
