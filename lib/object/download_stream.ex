@@ -2,8 +2,7 @@ defmodule ExRiakCS.Object.DownloadStream do
   require Logger
   alias ExRiakCS.Request
   alias __MODULE__
-
-  @timeout ExRiakCS.Config.get_stream_timeout
+  import ExRiakCS.Config, only: [get_stream_timeout: 0]
 
   defstruct [:id, :path, :headers]
 
@@ -67,7 +66,7 @@ defmodule ExRiakCS.Object.DownloadStream do
       other ->
         raise "ExRiakCS.Object.DownloadStream #{inspect stream} | Unexpected message: #{inspect other}"
 
-      after @timeout ->
+      after get_stream_timeout ->
         raise "ExRiakCS.Object.DownloadStream #{inspect stream} | Timed out"
     end
   end
@@ -84,7 +83,7 @@ defmodule ExRiakCS.Object.DownloadStream do
       %HTTPoison.AsyncStatus{code: code} when code in 400..499 ->
         {:error, %HTTPoison.Error{reason: "File not found: #{stream.path}", id: stream.id}}
 
-      after @timeout ->
+      after get_stream_timeout ->
         raise "ExRiakCS.Object.DownloadStream #{inspect stream} | Timed out"
     end
   end
@@ -98,7 +97,7 @@ defmodule ExRiakCS.Object.DownloadStream do
         %{stream | headers: headers}
         |> stream_next # stream first chunk if we got headers correctly
 
-      after @timeout ->
+      after get_stream_timeout ->
         raise "ExRiakCS.Object.DownloadStream #{inspect stream} timed out"
     end
   end
