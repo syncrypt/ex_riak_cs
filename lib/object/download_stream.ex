@@ -24,7 +24,6 @@ defmodule ExRiakCS.Object.DownloadStream do
   """
   def start(%DownloadStream{id: nil, path: path} = stream) do
     Logger.debug "ExRiakCS.Object.DownloadStream #{inspect stream} | Starting"
-    Logger.debug "ExRiakCS.Object.DownloadStream #{inspect stream} | Starting"
 
     %{stream | id: Request.get_async_throttled(self, path)}
     |> read_status
@@ -64,23 +63,25 @@ defmodule ExRiakCS.Object.DownloadStream do
         {:halt, stream}
 
       other ->
-        raise "ExRiakCS.Object.DownloadStream #{inspect stream} | Unexpected message: #{inspect other}"
+        raise "ExRiakCS.Object.DownloadStream #{stream.path} | Unexpected message: #{inspect other}"
 
       after get_stream_timeout ->
-        raise "ExRiakCS.Object.DownloadStream #{inspect stream} | Timed out"
+        raise "ExRiakCS.Object.DownloadStream #{stream.path} | Timed out"
     end
   end
 
   def cleanup(stream) do
-    Logger.debug "ExRiakCS.Object.DownloadStream #{inspect stream} | Finished"
+    Logger.debug "ExRiakCS.Object.DownloadStream #{stream.path} | Finished"
   end
 
   defp read_status(stream) do
     receive do
       %HTTPoison.AsyncStatus{code: 200} ->
+        Logger.debug "ExRiakCS.Object.DownloadStream #{stream.path} 200"
         {:ok, stream}
 
       %HTTPoison.AsyncStatus{code: code} when code in 400..499 ->
+        Logger.debug "ExRiakCS.Object.DownloadStream #{stream.path} #{code}"
         {:error, %HTTPoison.Error{reason: "File not found: #{stream.path}", id: stream.id}}
 
       after get_stream_timeout ->
@@ -94,6 +95,7 @@ defmodule ExRiakCS.Object.DownloadStream do
     stream_next(stream)
     receive do
       %HTTPoison.AsyncHeaders{} = headers ->
+        Logger.debug "ExRiakCS.Object.DownloadStream #{stream.path} HEADERS: #{inspect headers}"
         %{stream | headers: headers}
         |> stream_next # stream first chunk if we got headers correctly
 
