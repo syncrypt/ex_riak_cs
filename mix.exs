@@ -41,7 +41,8 @@ defmodule ExRiakCS.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      {:httpoison, "~> 0.10.0"},
+      # {:httpoison, "~> 0.10.0"},
+      {:httpoison, github: "syncrypt/httpoison"},
       {:timex, "~> 3.0"},
       {:credo, "~> 0.4", only: [:dev, :test]},
       {:sweet_xml, "~> 0.6.1"},
