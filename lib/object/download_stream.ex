@@ -104,7 +104,10 @@ defmodule ExRiakCS.Object.DownloadStream do
     end
   end
 
-  def stream_next(%DownloadStream{id: id} = stream) do
+  def stream_next(%DownloadStream{id: id} = stream, opts \\ nil) do
+    if opts do
+      HTTPoison.set_opts(id, opts)
+    end
     with {:ok, _} <- HTTPoison.stream_next(id) do
       {:ok, stream}
     end
