@@ -54,7 +54,7 @@ defmodule ExRiakCS.Object.DownloadStream do
   end
 
   def next(stream) do
-    stream_next(stream)
+    stream_next(stream, stream_to: self)
     receive do
       %HTTPoison.AsyncChunk{chunk: data} ->
         {[data], stream}
@@ -96,8 +96,7 @@ defmodule ExRiakCS.Object.DownloadStream do
     receive do
       %HTTPoison.AsyncHeaders{} = headers ->
         Logger.debug "ExRiakCS.Object.DownloadStream #{stream.path} HEADERS: #{inspect headers}"
-        %{stream | headers: headers}
-        |> stream_next # stream first chunk if we got headers correctly
+        {:ok, %{stream | headers: headers}}
 
       after get_stream_timeout ->
         raise "ExRiakCS.Object.DownloadStream #{inspect stream} timed out"
