@@ -9,13 +9,13 @@ defmodule ExRiakCS.Utils do
     base_url <> path_without_params(path) <> "?" <> params
   end
 
-  defp encode_params(request_type, path, headers, params) do
+  def encode_params(request_type, path, headers, params, opts \\ []) do
     type =
       request_type
       |> Atom.to_string
       |> String.upcase
     path
-    |> Auth.signature_params(type, headers)
+    |> Auth.signature_params(type, headers, opts)
     |> Map.merge(params, fn(_k, v1, _v2) -> v1 end)
     |> Map.merge(params_from_path(path), fn(_k, v1, _v2) -> v1 end)
     |> URI.encode_query()
@@ -35,7 +35,7 @@ defmodule ExRiakCS.Utils do
     end
   end
 
-  defp path_without_params(path) do
+  def path_without_params(path) do
     path
     |> String.split("?")
     |> Enum.at(0)

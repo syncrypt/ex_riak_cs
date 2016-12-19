@@ -11,7 +11,7 @@ defmodule ExRiakCS.AuthTest do
       AWSAccessKeyId: id,
       Expires: exp_time,
       Signature: signature
-    } = ExRiakCS.Auth.signature_params("/bucket/key?uploads", "POST", headers, @exp_time)
+    } = ExRiakCS.Auth.signature_params("/bucket/key?uploads", "POST", headers, expires: @exp_time)
     assert id == "test_id"
     assert exp_time == @exp_time
     assert signature == "Y7LdpKXS/A8kymdVunFxwLR4WfU="

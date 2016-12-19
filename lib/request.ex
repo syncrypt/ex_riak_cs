@@ -3,6 +3,15 @@ defmodule ExRiakCS.Request do
 
   @moduledoc false
 
+  def request(type, path, opts) when is_list(opts) do
+    params = opts[:params] || %{}
+    headers = opts[:headers] || %{}
+    body = opts[:body] || []
+
+    url = ExRiakCS.request_url(type, path, opts)
+    HTTPoison.request!(type, url, body, headers)
+  end
+
   def request(type, path, params \\ %{}, headers \\ %{}, body \\ []) do
     url = request_url(type, path, headers, params)
     HTTPoison.request!(type, url, body, headers)
@@ -19,7 +28,14 @@ defmodule ExRiakCS.Request do
   end
 
   def put(path, body, params \\ %{}, headers \\ %{}) do
+    import ExRiakCS.Config, only: [base_url: 0, key_id: 0]
     url = request_url(:put, path, headers, params)
-    HTTPoison.put(url, body, headers)
+    HTTPoison.put(url, body, headers, timeout: :infinity)
+  end
+
+  def put_stream(path, file_stream, params \\ %{}, headers \\ %{}) do
+    url = request_url(:put, path, headers, params)
+    stream = ExRiakCS.Object.UploadStream.new(path, file_stream)
+    HTTPoison.put(url, stream, headers)
   end
 end

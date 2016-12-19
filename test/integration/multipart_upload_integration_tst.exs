@@ -5,6 +5,10 @@ defmodule ExRiakCS.MultipartUploadIntegrationTest do
   @bucket "test-bucket"
   @key "file"
 
+  setup do
+    :ok = ExRiakCS.Bucket.put("test-bucket")
+  end
+
   test "uploads file using multipart upload" do
     file = "./test/files/file.mp3"
     {:ok, upload_id} = MultipartUpload.initiate_multipart_upload(@bucket, @key, "audio/mpeg")

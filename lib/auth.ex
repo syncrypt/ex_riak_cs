@@ -4,17 +4,23 @@ defmodule ExRiakCS.Auth do
 
   @moduledoc false
 
-  def signature_params(path, request_type, headers \\ %{}, exp_date \\ expiration_date(exp_days)) do
+  def signature_params(path, request_type, headers \\ %{}, opts \\ []) do
+    expires = case opts[:expires] do
+      t when is_number(t) ->
+        t
+      nil ->
+        expiration_date(opts[:exp_days] || exp_days)
+    end
     %{
-      "AWSAccessKeyId": key_id,
-      "Expires": exp_date,
-      "Signature": signature(request_type, exp_date, path, headers)
+      "AWSAccessKeyId": opts[:key_id] || key_id,
+      "Expires": expires,
+      "Signature": signature(request_type, expires, path, headers, opts)
       }
   end
 
-  defp signature(request_type, exp_date, path, headers) do
+  defp signature(request_type, exp_date, path, headers, opts \\ []) do
     string = string_to_sign(request_type, exp_date, path, headers)
-    string |> encrypt(secret_key)
+    string |> encrypt(opts[:secret_key] || secret_key)
   end
 
   defp string_to_sign(request_type, exp_date, path, headers) do
